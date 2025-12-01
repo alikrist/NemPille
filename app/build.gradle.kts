@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    id("kotlin-kapt")
 }
 
 android {
@@ -59,4 +60,9 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     //Jetpack compose navigation (NavController, NavHost, composable() to move between screens )
     implementation(libs.androidx.navigation.compose)
+    //Room database
+    implementation("androidx.room:room-runtime:2.8.4")
+    implementation("androidx.room:room-ktx:2.8.4")
+    // Annotation Processor (for generating code)
+    kapt("androidx.room:room-compiler:2.8.4")
 }
