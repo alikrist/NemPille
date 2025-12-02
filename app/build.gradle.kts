@@ -64,10 +64,17 @@ dependencies {
     //Room database
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
+    //kotlin symbol processing - api to develop lightweight complier plugins
     ksp(libs.androidx.room.compiler)
     //hilt core
     implementation(libs.hilt.android)
     //hilt code generator using ksp (consistent with room)
     ksp(libs.hilt.compiler)
     coreLibraryDesugaring(libs.desugar.jdk.libs)
+    //View-model& lifecycle for Compose
+    implementation(libs.androidx.lifecycle.viewmodel.ktx) //adds viewModelScope
+    implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.runtime.compose)
+    //Hilt + compose integration to use hiltViewModel()
+    implementation(libs.androidx.hilt.navigation.compose)
 }
