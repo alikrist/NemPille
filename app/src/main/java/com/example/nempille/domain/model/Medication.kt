@@ -4,8 +4,8 @@ package com.example.nempille.domain.model
 //not a Room entity or network DTO
 //clean representation used by ViewModels
 data class Medication(
-    val id: Long, //id pf medication
-    val userId: Long, //id of user (patient) who takes THIS medication
+    val id: Int = 0, //id pf medication
+    val userId: Int, //id of user (patient) who takes THIS medication
 
     val name:String,//ibumetin etc
     val dosage: String, //free text(1 pill or 10mg)

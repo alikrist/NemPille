@@ -3,52 +3,64 @@ package com.example.nempille.ui.screens.medication
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.nempille.domain.model.Medication
+import com.example.nempille.domain.repository.AuthenticationRepository
 import com.example.nempille.domain.repository.MedicationRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-//viewModel that receives MedicationRepository via Hilt Injection
-//exposes Flow of <List> Medication for UI
-//function to add a test medication to DB
-
-//hilt-managed View-Model, meaning - it will provide repository
+//Medication screen ViewModel now reacts to logged-in user instead of a hardcoded ID
 @HiltViewModel
 class MedicationViewModel @Inject constructor(
-    private val repository: MedicationRepository
+    private val medicationRepository: MedicationRepository,
+    private val authRepository: AuthenticationRepository
 ) : ViewModel() {
-    //NOW: hardcoded user ID
-    //later with login/auth
-    private val currentUserId: Long = 1L
 
-    //expose list of medications, so UI observes it
-    //.getMedicationsForUser returns Flow<List<Medication>>
-    //stateIn converts it in StetFlow with initial empty list
+    //observe the current user from AuthenticationRepository
+    //if he logs out - null
+    //if logs in - correct userId
+    private val currentUserFlow = authRepository
+        .getCurrentUser()              // Flow<User?>
+        .filterNotNull()               // Ignore null values
+        .map { it.id }                 // Convert User → userId (Int)
+        .stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5000),
+            null                        // initial state: no user yet
+        )
+
+    //medications updates when db changes, logged user changes
+    @OptIn(ExperimentalCoroutinesApi::class)
     val medications: StateFlow<List<Medication>> =
-        repository
-            .getMedicationsForUser(currentUserId)
+        currentUserFlow
+            .filterNotNull()                       // Wait until we have a userId
+            .flatMapLatest { userId ->
+                // Load medications for this user
+                medicationRepository.getMedicationsForUser(userId)
+            }
             .stateIn(
-                scope = viewModelScope,              // ViewModel's coroutine scope
-                started = SharingStarted.WhileSubscribed(5_000),
-                initialValue = emptyList()
+                viewModelScope,
+                SharingStarted.WhileSubscribed(5000),
+                emptyList()
             )
-    // Simple helper function to add a sample medication into the database
-    // This lets us see Room working without building a full "Add medication" form yet
+
+    //a test medication for currently logged in
     fun addSampleMedication() {
         viewModelScope.launch {
+            val userId = currentUserFlow.value ?: return@launch  // No user logged in
+
             val sample = Medication(
-                id = 0L,               // 0 means: let Room auto-generate ID
-                userId = currentUserId,
+                id = 0,                     //Room auto-generates the ID
+                userId = userId,            //The REAL logged-in user
                 name = "Ibuprofen",
                 dosage = "1 pill",
                 frequencyPerDay = 3,
                 notes = "After meals"
             )
 
-            repository.addMedication(sample)
+            medicationRepository.addMedication(sample)
         }
     }
 }

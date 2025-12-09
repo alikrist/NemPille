@@ -16,7 +16,7 @@ class MedicationRepositoryImpl @Inject constructor(
 
     // Get medications as a Flow of Entities from DAO,
     // then map them to a Flow of domain Medications.
-    override fun getMedicationsForUser(userId: Long): Flow<List<Medication>> {
+    override fun getMedicationsForUser(userId: Int): Flow<List<Medication>> {
         return medicationDao
             .getMedicationsForUser(userId)         // Flow<List<MedicationEntity>>
             .map { entityList ->

@@ -12,7 +12,7 @@ interface MedicationDao{
     //returns ALL medications for one user-patient
     //flow lets UI automatically update when data changes
     @Query("SELECT * FROM medications WHERE userId = :userId")
-    fun getMedicationsForUser(userId: Long): Flow<List<MedicationEntity>>
+    fun getMedicationsForUser(userId: Int): Flow<List<MedicationEntity>>
 
     //insert new medication
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -25,6 +25,10 @@ interface MedicationDao{
     //Delete
     @Delete
     suspend fun deleteMedication(medication: MedicationEntity)
+
+    //Get ALL medications
+    @Query("SELECT * FROM medications")
+    fun getAllMedications(): Flow<List<MedicationEntity>>
 }
 
 //room+flow - automatic UI updates

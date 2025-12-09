@@ -9,7 +9,7 @@ interface MedicationRepository {
 
     // Observe all medications for one specific user (patient)
     // Flow means: whenever database changes, the UI can react
-    fun getMedicationsForUser(userId: Long): Flow<List<Medication>>
+    fun getMedicationsForUser(userId: Int): Flow<List<Medication>>
 
     // Add a new medication to the database
     suspend fun addMedication(medication: Medication)
