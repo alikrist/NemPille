@@ -17,18 +17,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-//UI state for the auth screen: what UI needs to show / know
-data class AuthUiState(
-    val email: String = "",
-    val name: String = "",
-    val phone: String = "",
-    val role: UserRole = UserRole.PATIENT,  // default role
-    val isLoading: Boolean = false,
-    val errorMessage: String? = null,
-    val isLoggedIn: Boolean = false,
-    val currentUser: User? = null
-)
-
 //ViewModel that sits between UI and auth backend (use cases + repository)
 @HiltViewModel
 class AuthViewModel @Inject constructor(
@@ -44,18 +32,23 @@ class AuthViewModel @Inject constructor(
     val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
 
     init {
-        //Observe current user from repository -> update UI state automatically
+        // Listen to logged-in user flow from DataStore -> DB
         viewModelScope.launch {
             authRepository.getCurrentUser().collect { user ->
                 _uiState.update { state ->
                     state.copy(
                         currentUser = user,
-                        isLoggedIn = user != null
+                        isLoggedIn = user != null,
+
+                        //tells UI that authentication status has been read at least once
+                        isAuthInitialized = true
                     )
                 }
             }
         }
     }
+
+    //TEXT FIELD UPDATES
 
     //Called when user types email in TextField
     fun onEmailChanged(newEmail: String) {
@@ -76,6 +69,8 @@ class AuthViewModel @Inject constructor(
     fun onRoleChanged(newRole: UserRole) {
         _uiState.update { it.copy(role = newRole, errorMessage = null) }
     }
+
+    //LOGIN
 
     //Handle login button click
     // onSuccess is a callback that LoginScreen can use to navigate
@@ -114,6 +109,8 @@ class AuthViewModel @Inject constructor(
         }
     }
 
+    //SIGNUP
+
     //Handle signup button click (for future SignupScreen)
     fun signup() {
         val state = _uiState.value
@@ -149,6 +146,8 @@ class AuthViewModel @Inject constructor(
                 }
         }
     }
+
+    //LOGOUT
 
     fun logout() {
         viewModelScope.launch {

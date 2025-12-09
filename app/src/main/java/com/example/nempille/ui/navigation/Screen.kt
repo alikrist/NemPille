@@ -9,7 +9,9 @@ package com.example.nempille.ui.navigation
 //new screen -> new object here
 
 sealed class Screen (val route: String){
-    //Login screen (first after app starts)
+    //splash - first screen that decides where to go (login or home)
+    data object Splash : Screen("splash")
+    //Login screen (after splash if not logged in)
     data object Login : Screen("login")
     //Sign up - registration
     data object Signup : Screen("signup")
