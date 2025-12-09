@@ -7,16 +7,118 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavController
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.*
+import androidx.compose.runtime.getValue
+//import androidx.compose.ui.text.input.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.nempille.ui.auth.AuthViewModel
+import com.example.nempille.ui.common.collectAsStateWithLifecycleSafe
+import com.example.nempille.ui.navigation.Screen
 
-//signup screen placeholder
+//simple signup screen screen
+//same AuthViewModel
+//Lets user enter name + email (+ phone)
+//Calls viewModel.signup()
+//On success goes back to Login so user can log in
+
 @Composable
 fun SignupScreen(
-    navController: NavController //passed for consistency
+    navController: NavController,
+    modifier: Modifier = Modifier,
+    viewModel: AuthViewModel = hiltViewModel()
 ) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycleSafe()
+
     Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center //center the content
+        modifier = modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        contentAlignment = Alignment.Center
     ) {
-        Text(text = "Signup Screen")
+        Column(
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                text = "Sign up",
+                style = MaterialTheme.typography.headlineMedium
+            )
+
+            //Name
+            OutlinedTextField(
+                value = uiState.name,
+                onValueChange = viewModel::onNameChanged,
+                label = { Text("Name") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            //Email
+            OutlinedTextField(
+                value = uiState.email,
+                onValueChange = viewModel::onEmailChanged,
+                label = { Text("Email") },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Email
+                ),
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            //Phone (optional)
+            OutlinedTextField(
+                value = uiState.phone,
+                onValueChange = viewModel::onPhoneChanged,
+                label = { Text("Phone (optional)") },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Phone
+                ),
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            //Error
+            uiState.errorMessage?.let { error ->
+                Text(
+                    text = error,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+
+            //Sign up button
+            Button(
+                onClick = {
+                    viewModel.signup()
+                    // very simple: after signup, go back to Login
+                    // (login will now find the user by email)
+                    navController.popBackStack()
+                },
+                enabled = !uiState.isLoading,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                if (uiState.isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier
+                            .size(18.dp)
+                            .padding(end = 8.dp),
+                        strokeWidth = 2.dp
+                    )
+                    Text("Creating account…")
+                } else {
+                    Text("Sign up")
+                }
+            }
+
+            //Back to login
+            TextButton(onClick = { navController.popBackStack() }) {
+                Text("Already have an account? Log in")
+            }
+        }
     }
 }

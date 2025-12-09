@@ -46,9 +46,6 @@ fun AppNavHost(
         composable(route = Screen.Notifications.route) {
             NotificationsScreen(navController = navController)
         }
-        composable(route = Screen.Caregiver.route) {
-            CaregiverScreen(navController = navController)
-        }
     }
 }
 //NavHost shows composables
