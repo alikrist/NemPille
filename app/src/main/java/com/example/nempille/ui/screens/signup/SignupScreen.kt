@@ -18,6 +18,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.nempille.ui.auth.AuthViewModel
 import com.example.nempille.ui.common.collectAsStateWithLifecycleSafe
 import com.example.nempille.ui.navigation.Screen
+import androidx.compose.material3.FilterChip
+import com.example.nempille.domain.model.UserRole
 
 //simple signup screen screen
 //same AuthViewModel
@@ -82,6 +84,30 @@ fun SignupScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
+            // ROLE SELECTION
+            Text(
+                text = "Select Role",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                FilterChip(
+                    selected = uiState.role == UserRole.PATIENT,
+                    onClick = { viewModel.onRoleChanged(UserRole.PATIENT) },
+                    label = { Text("Patient") }
+                )
+
+                FilterChip(
+                    selected = uiState.role == UserRole.CAREGIVER,
+                    onClick = { viewModel.onRoleChanged(UserRole.CAREGIVER) },
+                    label = { Text("Caregiver") }
+                )
+            }
+
             //Error
             uiState.errorMessage?.let { error ->
                 Text(
@@ -94,10 +120,13 @@ fun SignupScreen(
             //Sign up button
             Button(
                 onClick = {
-                    viewModel.signup()
+                    viewModel.signup(
+                        onSuccess = {
                     // very simple: after signup, go back to Login
                     // (login will now find the user by email)
                     navController.popBackStack()
+                        }
+                    )
                 },
                 enabled = !uiState.isLoading,
                 modifier = Modifier.fillMaxWidth()

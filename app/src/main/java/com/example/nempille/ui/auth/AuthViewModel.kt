@@ -112,9 +112,12 @@ class AuthViewModel @Inject constructor(
     //SIGNUP
 
     //Handle signup button click (for future SignupScreen)
-    fun signup() {
+    // onSuccess will be called only when signup completed successfully
+    //so the screen can navigate away (e.g. back to Login or to Home)
+    fun signup(onSuccess: () -> Unit = {}) {
         val state = _uiState.value
 
+        //basic validation
         if (state.name.isBlank() || state.email.isBlank()) {
             _uiState.update { it.copy(errorMessage = "Name and email are required") }
             return
@@ -132,9 +135,11 @@ class AuthViewModel @Inject constructor(
 
             result
                 .onSuccess {
+                    //user is created and also logged in by backend
                     _uiState.update { s ->
                         s.copy(isLoading = false, errorMessage = null)
                     }
+                    onSuccess()
                 }
                 .onFailure { throwable ->
                     _uiState.update { s ->
