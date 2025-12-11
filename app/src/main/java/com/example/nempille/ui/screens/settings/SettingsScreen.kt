@@ -1,30 +1,65 @@
 package com.example.nempille.ui.screens.settings
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
+import android.os.Build
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 
-@SuppressLint("MissingPermission") // Suppress permission warning for device.name
+@SuppressLint("MissingPermission")
 @Composable
 fun SettingsScreen(
     navController: NavController,
     viewModel: BluetoothViewModel = hiltViewModel()
 ) {
-    // 1. Observe the UI State from ViewModel
     val uiState by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
+
+    // --- 1. PERMISSION LOGIC ---
+    // Define which permissions we need based on Android version
+    val permissionsToRequest = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        // Android 12+ (Target SDK 31+)
+        arrayOf(
+            Manifest.permission.BLUETOOTH_SCAN,
+            Manifest.permission.BLUETOOTH_CONNECT
+        )
+    } else {
+        // Android 11 or lower
+        arrayOf(
+            Manifest.permission.BLUETOOTH,
+            Manifest.permission.BLUETOOTH_ADMIN,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        )
+    }
+
+    // Create the launcher that shows the popup
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { perms ->
+        // This runs when the user clicks "Allow" or "Deny"
+        val allGranted = perms.values.all { it }
+        if (allGranted) {
+            // Permission granted! Now we can scan safely.
+            viewModel.scanForDevices()
+        } else {
+            Toast.makeText(context, "Bluetooth permission is needed to scan!", Toast.LENGTH_LONG).show()
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -33,7 +68,7 @@ fun SettingsScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
-        // --- HEADER: Title & Scan Switch ---
+        // --- HEADER ---
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -46,16 +81,25 @@ fun SettingsScreen(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(text = if (uiState.isScanning) "Scanning..." else "Scan")
                 Spacer(modifier = Modifier.width(8.dp))
+
+                // --- SWITCH WITH PERMISSION CHECK ---
                 Switch(
                     checked = uiState.isScanning,
-                    onCheckedChange = { viewModel.scanForDevices() }
+                    onCheckedChange = { shouldScan ->
+                        if (shouldScan) {
+                            // If turning ON, ask for permission first
+                            permissionLauncher.launch(permissionsToRequest)
+                        } else {
+                            // If turning OFF, just stop
+                            viewModel.scanForDevices()
+                        }
+                    }
                 )
             }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // --- LOADING INDICATOR ---
         if (uiState.isScanning) {
             LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
             Spacer(modifier = Modifier.height(8.dp))
@@ -72,88 +116,59 @@ fun SettingsScreen(
 
         LazyColumn(
             modifier = Modifier
-                .weight(1f) // Takes up remaining space
+                .weight(1f)
                 .fillMaxWidth()
         ) {
             items(uiState.scannedDevices) { device ->
                 BluetoothDeviceItem(
                     device = device,
-                    onClick = { viewModel.connectToDevice(device) }
+                    onClick = {
+                        // We also need permission to connect!
+                        permissionLauncher.launch(permissionsToRequest)
+                        viewModel.connectToDevice(device)
+                    }
                 )
             }
         }
 
+        // --- FOOTER ---
         Spacer(modifier = Modifier.height(16.dp))
+        StatusCard(uiState.connectedDevice, uiState.errorMessage)
+    }
+}
 
-        // --- FOOTER: Connection Status ---
-        Card(
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.secondaryContainer
-            ),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(
-                    text = "Status",
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.Bold
-                )
+// --- HELPER COMPONENTS ---
 
-                if (uiState.connectedDevice != null) {
-                    Text(
-                        text = "✅ Connected to: ${uiState.connectedDevice}",
-                        color = Color(0xFF006400) // Dark Green
-                    )
-                } else {
-                    Text(text = "❌ Not Connected")
-                }
-
-                if (uiState.errorMessage != null) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "Error: ${uiState.errorMessage}",
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
-            }
+@SuppressLint("MissingPermission")
+@Composable
+fun BluetoothDeviceItem(device: BluetoothDevice, onClick: () -> Unit) {
+    Button(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant, contentColor = MaterialTheme.colorScheme.onSurfaceVariant),
+        shape = MaterialTheme.shapes.small
+    ) {
+        Column(horizontalAlignment = Alignment.Start, modifier = Modifier.fillMaxWidth()) {
+            Text(text = device.name ?: "Unknown Device", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
+            Text(text = device.address, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
         }
     }
 }
 
-// --- HELPER COMPONENT: Single Device Row ---
-@SuppressLint("MissingPermission")
 @Composable
-fun BluetoothDeviceItem(
-    device: BluetoothDevice,
-    onClick: () -> Unit
-) {
-    Button(
-        onClick = onClick,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-            contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-        ),
-        shape = MaterialTheme.shapes.small
-    ) {
-        Column(
-            horizontalAlignment = Alignment.Start,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            // Display Name (or "Unknown" if null)
-            Text(
-                text = device.name ?: "Unknown Device",
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Bold
-            )
-            // Display MAC Address (e.g., AA:BB:CC:11:22)
-            Text(
-                text = device.address,
-                style = MaterialTheme.typography.bodySmall,
-                color = Color.Gray
-            )
+fun StatusCard(connectedDevice: String?, errorMessage: String?) {
+    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer), modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(text = "Status", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+            if (connectedDevice != null) {
+                Text(text = "✅ Connected to: $connectedDevice", color = Color(0xFF006400))
+            } else {
+                Text(text = "❌ Not Connected")
+            }
+            if (errorMessage != null) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(text = "Error: $errorMessage", color = MaterialTheme.colorScheme.error)
+            }
         }
     }
 }
