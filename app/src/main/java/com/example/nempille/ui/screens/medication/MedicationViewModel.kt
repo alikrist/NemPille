@@ -90,6 +90,18 @@ class MedicationViewModel @Inject constructor(
         }
     }
 
+    // LOAD ONE MEDICATION (for editing)
+    suspend fun getMedication(medicationId: Int): Medication? {
+        return medicationRepository.getMedicationById(medicationId)
+    }
+
+    // UPDATE MEDICATION
+    fun updateMedication(medication: Medication) {
+        viewModelScope.launch {
+            medicationRepository.updateMedication(medication)
+        }
+    }
+
     //DELETE MEDICATION THAT BELONGS TO LOGGED IN USER
     //view-model receives medication objects from UI
     //launches coroutine

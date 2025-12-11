@@ -19,9 +19,16 @@ sealed class Screen (val route: String){
     data object Home : Screen("home")
     //Medications for the current user
     data object MedicationList : Screen("medication_list")
-    //Caregiver view (list of patients, for instance)
     //Screen to add medication
     data object AddMedication : Screen("add_medication")
+    // EDIT MEDICATION with navigation argument
+    data object EditMedication : Screen("edit_medication/{medicationId}") {
+
+        // Helper to build a concrete route, e.g. "edit_medication/5"
+        fun createRoute(medicationId: Int): String =
+            "edit_medication/$medicationId"
+    }
+    //caregiver screen
     data object Caregiver : Screen("caregiver")
     //App settings
     data object Settings : Screen ("settings")

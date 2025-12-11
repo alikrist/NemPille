@@ -1,5 +1,6 @@
 package com.example.nempille.ui.screens.medication
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -17,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.nempille.domain.model.Medication
+import com.example.nempille.ui.navigation.Screen
 
 //shows list of medications from Room via ViewModel
 @Composable
@@ -76,7 +78,10 @@ fun MedicationListScreen (
                 items(medicationList) { medication ->
                     MedicationItem(
                         medication = medication,
-                        onDeleteClick = {viewModel.deleteMedication(it)}
+                        navController = navController,
+                        onDeleteClick = { medicationToDelete ->
+                            viewModel.deleteMedication(medicationToDelete)
+                        }
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                 }
@@ -86,13 +91,23 @@ fun MedicationListScreen (
 }
 
 // Reusable composable to display a single medication item in a card
+// Reusable composable to display a single medication item in a card
 @Composable
 fun MedicationItem(
     medication: Medication,
-    onDeleteClick: (Medication) -> Unit //callback to parent screen
+    navController: NavController,
+    onDeleteClick: (Medication) -> Unit // callback to parent screen
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            // you can keep clickable for extra option,
+            // or remove it if you want only the Update button to be used
+            .clickable {
+                navController.navigate(
+                    Screen.EditMedication.createRoute(medication.id)
+                )
+            },
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
@@ -102,18 +117,37 @@ fun MedicationItem(
             )
             Text(text = "Dosage: ${medication.dosage}")
             Text(text = "Times per day: ${medication.frequencyPerDay}")
+
             medication.notes?.let { notes ->
                 Text(text = "Notes: $notes")
             }
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            //DELETE BUTTON
-            Button(
-                onClick = { onDeleteClick(medication)},
-                modifier = Modifier.align(Alignment.End)
+            // ROW WITH UPDATE + DELETE buttons (right aligned)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
             ) {
-                Text("Delete")
+                // UPDATE BUTTON (left)
+                Button(
+                    onClick = {
+                        navController.navigate(
+                            Screen.EditMedication.createRoute(medication.id)
+                        )
+                    }
+                ) {
+                    Text("Update")
+                }
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                // DELETE BUTTON (right)
+                Button(
+                    onClick = { onDeleteClick(medication) }
+                ) {
+                    Text("Delete")
+                }
             }
         }
     }

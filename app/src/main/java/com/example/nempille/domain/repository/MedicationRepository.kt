@@ -19,4 +19,7 @@ interface MedicationRepository {
 
     // Delete a medication
     suspend fun deleteMedication(medication: Medication)
+
+    //Get medication by ID
+    suspend fun getMedicationById(id: Int): Medication?
 }

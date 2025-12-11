@@ -14,6 +14,9 @@ import com.example.nempille.ui.screens.settings.SettingsScreen
 import com.example.nempille.ui.screens.signup.SignupScreen
 import com.example.nempille.ui.splash.SplashScreen
 import com.example.nempille.ui.screens.medication.AddMedicationScreen
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
+import com.example.nempille.ui.screens.medication.EditMedicationScreen
 
 //composable HOSTS - entire navigation graph
 //tells Navigation which composable belongs to which route
@@ -55,6 +58,20 @@ fun AppNavHost(
         //ADD MEDICATION
         composable(route = Screen.AddMedication.route) {
             AddMedicationScreen(navController = navController)
+        }
+
+        // EDIT MEDICATION
+        composable(
+            route = Screen.EditMedication.route,
+            arguments = listOf(
+                navArgument("medicationId") { type = NavType.IntType }
+            )
+        ) { backStackEntry ->
+            val medicationId = backStackEntry.arguments?.getInt("medicationId") ?: 0
+            EditMedicationScreen(
+                navController = navController,
+                medicationId = medicationId
+            )
         }
 
         //CAREGIVER

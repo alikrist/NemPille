@@ -29,6 +29,11 @@ interface MedicationDao{
     //Get ALL medications
     @Query("SELECT * FROM medications")
     fun getAllMedications(): Flow<List<MedicationEntity>>
+
+    //GET MEDICATION BY ID
+    @Query("SELECT * FROM medications WHERE id = :id LIMIT 1")
+    suspend fun getMedicationById(id: Int): MedicationEntity?
+
 }
 
 //room+flow - automatic UI updates

@@ -8,6 +8,8 @@ import com.example.nempille.domain.repository.MedicationRepository
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import com.example.nempille.data.local.entity.MedicationEntity
+import com.example.nempille.data.mapper.toDomain
 
 // Concrete implementation of MedicationRepository that uses Room via MedicationDao
 class MedicationRepositoryImpl @Inject constructor(
@@ -45,6 +47,11 @@ class MedicationRepositoryImpl @Inject constructor(
         medicationDao.deleteMedication(
             medication.toEntity()
         )
+    }
+
+    //GET medication by ID
+    override suspend fun getMedicationById(id: Int): Medication? {
+        return medicationDao.getMedicationById(id)?.toDomain()
     }
 }
 
