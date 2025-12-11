@@ -74,7 +74,10 @@ fun MedicationListScreen (
             ) {
                 // items(...) iterates over the list and creates a row for each medication
                 items(medicationList) { medication ->
-                    MedicationItem(medication = medication)
+                    MedicationItem(
+                        medication = medication,
+                        onDeleteClick = {viewModel.deleteMedication(it)}
+                    )
                     Spacer(modifier = Modifier.height(8.dp))
                 }
             }
@@ -85,7 +88,8 @@ fun MedicationListScreen (
 // Reusable composable to display a single medication item in a card
 @Composable
 fun MedicationItem(
-    medication: Medication
+    medication: Medication,
+    onDeleteClick: (Medication) -> Unit //callback to parent screen
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -100,6 +104,16 @@ fun MedicationItem(
             Text(text = "Times per day: ${medication.frequencyPerDay}")
             medication.notes?.let { notes ->
                 Text(text = "Notes: $notes")
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            //DELETE BUTTON
+            Button(
+                onClick = { onDeleteClick(medication)},
+                modifier = Modifier.align(Alignment.End)
+            ) {
+                Text("Delete")
             }
         }
     }

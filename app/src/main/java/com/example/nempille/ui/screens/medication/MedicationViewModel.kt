@@ -10,6 +10,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlinx.coroutines.flow.filterNotNull
 
 //Medication screen ViewModel now reacts to logged-in user instead of a hardcoded ID
 @HiltViewModel
@@ -54,11 +55,11 @@ class MedicationViewModel @Inject constructor(
         notes: String?
     ) {
         viewModelScope.launch{
-            val userId = currentUserFlow.value
-            //if no one is logged in, cannot create medication
-            if (userId == null) {
-                return@launch
-            }
+            // Wait until we get a non-null userId from the flow
+            val userId: Int = currentUserFlow
+                .filterNotNull()         // ignore null values
+                .firstOrNull()           // suspend until we have a value
+                ?: return@launch         // still null? abort safely
 
             val medication = Medication(
                 id = 0,            //0-let room autogenerate
@@ -86,6 +87,18 @@ class MedicationViewModel @Inject constructor(
             )
 
             medicationRepository.addMedication(sample)
+        }
+    }
+
+    //DELETE MEDICATION THAT BELONGS TO LOGGED IN USER
+    //view-model receives medication objects from UI
+    //launches coroutine
+    //calls repository-dao-room-deletes the row
+    //bc of the flow, medication deletes automatically
+
+    fun deleteMedication(medication: Medication){
+        viewModelScope.launch {
+            medicationRepository.deleteMedication(medication)
         }
     }
 }
