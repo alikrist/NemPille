@@ -93,6 +93,7 @@ fun AppNavHost(
                 navArgument("patientId") { type = NavType.IntType }
             )
         ) { backStackEntry ->
+            // Read the patientId from navigation arguments
             val patientId = backStackEntry.arguments?.getInt("patientId") ?: 0
 
             PatientMedicationListScreen(
