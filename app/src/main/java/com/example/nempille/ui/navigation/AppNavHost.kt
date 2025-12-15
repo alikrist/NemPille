@@ -20,8 +20,14 @@ import com.example.nempille.ui.screens.medication.EditMedicationScreen
 import com.example.nempille.ui.screens.patient.PatientMedicationListScreen
 import com.example.nempille.ui.screens.patient.AddPatientScreen
 
-//composable HOSTS - entire navigation graph
-//tells Navigation which composable belongs to which route
+import com.example.nempille.ui.screens.setup.SetupProfileScreen
+import com.example.nempille.ui.screens.setup.SetupAgeAndPillCountScreen
+import com.example.nempille.ui.screens.setup.SetupMedicationNamesScreen
+import com.example.nempille.ui.screens.setup.SetupMedicationScheduleScreen
+import com.example.nempille.ui.screens.setup.SetupNotificationsScreen
+import com.example.nempille.ui.screens.setup.SetupSummaryScreen
+import com.example.nempille.ui.screens.setup.WelcomeScreen
+
 
 @Composable
 fun AppNavHost(
@@ -35,6 +41,10 @@ fun AppNavHost(
         //SPLASH
         composable(route = Screen.Splash.route) {
             SplashScreen(navController = navController)
+        }
+
+        composable(route = Screen.WelcomeScreen.route){
+            WelcomeScreen(navController = navController)
         }
 
         //LOGIN
@@ -51,6 +61,35 @@ fun AppNavHost(
         composable(route = Screen.Home.route) {
             HomeScreen(navController = navController)
         }
+
+
+        composable(route = Screen.SetupProfile.route) {
+            SetupProfileScreen(navController = navController)
+        }
+        composable(route = Screen.SetupMedicationNames.route) {
+            SetupMedicationNamesScreen(navController = navController)
+        }
+        composable(
+            route = Screen.SetupMedicationSchedule.route,
+            arguments = listOf(navArgument("medIndex") { type = NavType.IntType })
+        ) { backStackEntry ->
+            val medIndex = backStackEntry.arguments?.getInt("medIndex") ?: 0
+            SetupMedicationScheduleScreen(
+                navController = navController,
+                medicationIndex = medIndex
+            )
+        }
+        composable(route = Screen.SetupNotifications.route) {
+            SetupNotificationsScreen(navController = navController)
+        }
+        composable(route = Screen.SetupSummary.route) {
+            SetupSummaryScreen(navController = navController)
+        }
+
+        composable(route = Screen.SetupAgeAndPillCount.route) {
+            SetupAgeAndPillCountScreen(navController = navController)
+        }
+
 
         //MEDICATION LIST
         composable(route = Screen.MedicationList.route) {
